@@ -1,10 +1,13 @@
-import { useState } from 'react';
+// ===============================================
+// FIXED src/components/loans/ManualLoanForm.jsx
+// ===============================================
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { loanService } from '../../services/loanService';
 import { LOAN_TYPES, LOAN_TERMS } from '../../config';
-import { formatCurrency, calculateMonthlyPayment } from '../../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 
 export default function ManualLoanForm({ initialData, onSuccess }) {
   const navigate = useNavigate();
@@ -49,28 +52,34 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
     }
   });
 
-  // Watch values for auto-calculation
-  const watchedValues = watch();
+  // Watch form values for auto-calculation
+  const loanAmount = watch('loanDetails.loanAmount');
+  const interestRate = watch('loanDetails.interestRate');
+  const loanTerm = watch('loanDetails.loanTerm');
+  const propertyValue = watch('loanDetails.propertyValue');
+  const mortgageInsurance = watch('monthlyPayment.mortgageInsurance');
+  const escrow = watch('monthlyPayment.escrow');
 
-  // Auto-calculate monthly payment when loan details change
-  useState(() => {
-    const { loanAmount, interestRate, loanTerm, propertyValue } = watchedValues.loanDetails || {};
-    const { mortgageInsurance, escrow } = watchedValues.monthlyPayment || {};
-
+  // Auto-calculate monthly payment when values change
+  useEffect(() => {
     if (loanAmount && interestRate && loanTerm) {
-      const monthlyPI = calculateMonthlyPayment(
-        parseFloat(loanAmount),
-        parseFloat(interestRate),
-        parseInt(loanTerm)
-      );
-
+      // Calculate monthly P&I
+      const principal = parseFloat(loanAmount);
+      const rate = parseFloat(interestRate);
+      const term = parseInt(loanTerm);
+      
+      const monthlyPI = calculateMonthlyPayment(principal, rate, term);
+      
+      // Calculate PMI and escrow
       const pmi = parseFloat(mortgageInsurance) || 0;
       const esc = parseFloat(escrow) || 0;
       const total = monthlyPI + pmi + esc;
 
-      const ltv = propertyValue 
-        ? (parseFloat(loanAmount) / parseFloat(propertyValue)) * 100 
-        : 0;
+      // Calculate LTV
+      let ltv = 0;
+      if (propertyValue && parseFloat(propertyValue) > 0) {
+        ltv = (principal / parseFloat(propertyValue)) * 100;
+      }
 
       setCalculatedValues({
         monthlyPI: monthlyPI.toFixed(2),
@@ -78,15 +87,34 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
         ltv: ltv.toFixed(2)
       });
 
+      // Update form values
       setValue('monthlyPayment.principalInterest', monthlyPI.toFixed(2));
       setValue('monthlyPayment.total', total.toFixed(2));
+    } else {
+      // Reset if required fields are empty
+      setCalculatedValues({
+        monthlyPI: 0,
+        totalMonthly: 0,
+        ltv: propertyValue && loanAmount ? ((parseFloat(loanAmount) / parseFloat(propertyValue)) * 100).toFixed(2) : 0
+      });
     }
-  }, [watchedValues.loanDetails?.loanAmount, 
-      watchedValues.loanDetails?.interestRate, 
-      watchedValues.loanDetails?.loanTerm,
-      watchedValues.loanDetails?.propertyValue,
-      watchedValues.monthlyPayment?.mortgageInsurance,
-      watchedValues.monthlyPayment?.escrow]);
+  }, [loanAmount, interestRate, loanTerm, propertyValue, mortgageInsurance, escrow, setValue]);
+
+  // Calculate monthly payment formula
+  const calculateMonthlyPayment = (principal, annualRate, termYears) => {
+    if (!principal || !annualRate || !termYears) return 0;
+    
+    const monthlyRate = annualRate / 100 / 12;
+    const numPayments = termYears * 12;
+    
+    if (monthlyRate === 0) return principal / numPayments;
+    
+    const payment = principal * 
+      (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1);
+    
+    return payment;
+  };
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -109,7 +137,7 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
           total: parseFloat(data.monthlyPayment.total)
         },
         closingCosts: {
-          total: parseFloat(data.closingCosts.total || 0),
+          total: data.closingCosts.total ? parseFloat(data.closingCosts.total) : 0,
           loanCosts: data.closingCosts.loanCosts ? parseFloat(data.closingCosts.loanCosts) : null,
           otherCosts: data.closingCosts.otherCosts ? parseFloat(data.closingCosts.otherCosts) : null,
           lenderCredits: parseFloat(data.closingCosts.lenderCredits || 0)
@@ -151,7 +179,7 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
               type="number"
               step="0.01"
               className="input"
-              placeholder="250000"
+              placeholder="150000"
               {...register('loanDetails.loanAmount', { 
                 required: 'Loan amount is required',
                 min: { value: 1000, message: 'Minimum loan amount is $1,000' }
@@ -170,14 +198,14 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
               type="number"
               step="0.01"
               className="input"
-              placeholder="300000"
+              placeholder="180000"
               {...register('loanDetails.propertyValue')}
             />
             {calculatedValues.ltv > 0 && (
               <p className="text-sm text-gray-600 mt-1">
                 LTV: {calculatedValues.ltv}%
-                {calculatedValues.ltv > 80 && (
-                  <span className="text-orange-600"> (PMI may be required)</span>
+                {parseFloat(calculatedValues.ltv) > 80 && (
+                  <span className="text-orange-600 font-medium"> (PMI required)</span>
                 )}
               </p>
             )}
@@ -191,7 +219,7 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
               type="number"
               step="0.001"
               className="input"
-              placeholder="6.5"
+              placeholder="4.25"
               {...register('loanDetails.interestRate', { 
                 required: 'Interest rate is required',
                 min: { value: 0.1, message: 'Interest rate must be greater than 0' },
@@ -211,7 +239,7 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
               type="number"
               step="0.001"
               className="input"
-              placeholder="6.75"
+              placeholder="4.50"
               {...register('loanDetails.apr', { 
                 required: 'APR is required',
                 min: { value: 0.1, message: 'APR must be greater than 0' },
@@ -287,11 +315,11 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
       <div className="card">
         <h3 className="text-xl font-bold mb-4">Monthly Payment Breakdown</h3>
         
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700">Calculated Monthly P&I:</span>
-            <span className="text-2xl font-bold text-blue-600">
-              {formatCurrency(calculatedValues.monthlyPI)}
+            <span className="text-3xl font-bold text-blue-600">
+              {calculatedValues.monthlyPI > 0 ? formatCurrency(calculatedValues.monthlyPI) : '$0'}
             </span>
           </div>
         </div>
@@ -304,7 +332,7 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
             <input
               type="number"
               step="0.01"
-              className="input bg-gray-50"
+              className="input bg-gray-100 cursor-not-allowed"
               readOnly
               {...register('monthlyPayment.principalInterest')}
             />
@@ -346,18 +374,18 @@ export default function ManualLoanForm({ initialData, onSuccess }) {
             <input
               type="number"
               step="0.01"
-              className="input bg-gray-50"
+              className="input bg-gray-100 cursor-not-allowed"
               readOnly
               {...register('monthlyPayment.total')}
             />
           </div>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mt-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700">Total Monthly Payment:</span>
-            <span className="text-2xl font-bold text-green-600">
-              {formatCurrency(calculatedValues.totalMonthly)}
+            <span className="text-3xl font-bold text-green-600">
+              {calculatedValues.totalMonthly > 0 ? formatCurrency(calculatedValues.totalMonthly) : '$0'}
             </span>
           </div>
         </div>

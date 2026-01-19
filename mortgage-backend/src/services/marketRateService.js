@@ -32,23 +32,24 @@ class MarketRateService {
 
   getMockMarketRates(loanType, loanTerm, creditScore) {
     // Base rate varies by term
-    let baseRate;
-    if (loanTerm === 30) baseRate = 6.8;
-    else if (loanTerm === 15) baseRate = 6.2;
-    else baseRate = 7.0;
+    // let baseRate;
+    const baseRate = 6.25;
+    // if (loanTerm === 30) baseRate = 6.8;
+    // else if (loanTerm === 15) baseRate = 6.2;
+    // else baseRate = 7.0;
 
     // Adjust for credit score
-    if (creditScore >= 760) baseRate -= 0.5;
-    else if (creditScore >= 700) baseRate -= 0.25;
-    else if (creditScore < 680) baseRate += 0.25;
+    // if (creditScore >= 760) baseRate -= 0.5;
+    // else if (creditScore >= 700) baseRate -= 0.25;
+    // else if (creditScore < 680) baseRate += 0.25;
 
     // Generate rates from multiple "sources"
     const sources = [
-      { provider: 'Lender A', rate: baseRate - 0.125, apr: baseRate - 0.05, points: 0.5 },
-      { provider: 'Lender B', rate: baseRate, apr: baseRate + 0.15, points: 0 },
-      { provider: 'Lender C', rate: baseRate + 0.125, apr: baseRate + 0.25, points: 0 },
-      { provider: 'Lender D', rate: baseRate - 0.25, apr: baseRate - 0.1, points: 1.0 },
-      { provider: 'Lender E', rate: baseRate + 0.25, apr: baseRate + 0.35, points: 0 }
+      { provider: 'Lender A', rate: baseRate - 0.25, apr: baseRate - 0.10, points: 0.5 },
+      { provider: 'Lender B', rate: baseRate-0.125, apr: baseRate - 0.05, points: 0 },
+      { provider: 'Lender C', rate: baseRate, apr: baseRate + 0.10, points: 0 },
+      { provider: 'Lender D', rate: baseRate + 0.125, apr: baseRate + 0.20, points: 1.0 },
+      { provider: 'Lender E', rate: baseRate + 0.25, apr: baseRate + 0.30, points: 0 }
     ];
 
     const rates = sources.map(s => s.rate);

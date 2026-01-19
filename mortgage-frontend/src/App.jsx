@@ -9,9 +9,12 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import LoansPage from './pages/LoansPage';
+import NewLoanPage from './pages/NewLoanPage';
 import ComparisonPage from './pages/ComparisonPages';
 import CalculatorsPage from './pages/CalculatorsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ComparisonResultPage from './pages/ComparisonResultPage';
+import ApplicationSuccess from './pages/ApplicationSuccess';
 
 function App() {
   return (
@@ -26,8 +29,12 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/loans" element={<LoansPage />} />
+            <Route path="/loans/new" element={<NewLoanPage/>}/>
             <Route path="/comparison" element={<ComparisonPage />} />
             <Route path="/calculators" element={<CalculatorsPage />} />
+            <Route path="/comparison/results" element={<ComparisonResultPage/>}/>
+            <Route path="/application-success" element={<ApplicationSuccess/>} />
+            
           </Route>
 
           <Route path="/404" element={<NotFoundPage />} />
