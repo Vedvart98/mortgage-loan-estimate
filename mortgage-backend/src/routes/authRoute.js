@@ -14,6 +14,7 @@ const { validateRequest } = require('../middleware/validation');
 router.post('/register', [
   body('email').isEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be around 8 characters longer'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 8 characters long'),
   body('firstName').notEmpty().withMessage('First name is required'),
   body('lastName').notEmpty().withMessage('Last name is required'),
   validateRequest
