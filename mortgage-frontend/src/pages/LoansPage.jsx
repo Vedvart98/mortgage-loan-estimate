@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FiPlus, FiUpload } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { FiPlus, FiUpload, FiEdit } from 'react-icons/fi';
 import { loanService } from '../services/loanService';
-import PDFUploader from '../components/pdf/PdfUploader';
+import PDFUploader from '../components/pdf/PDFUploader';
 import DataConfirmation from '../components/pdf/DataConfirmation';
 import LoanCard from '../components/loans/LoanCard';
 import toast from 'react-hot-toast';
@@ -71,13 +72,19 @@ export default function LoansPage() {
           <h1 className="text-3xl font-bold text-gray-900">My Loans</h1>
           <p className="text-gray-600">Manage and compare your mortgage loans</p>
         </div>
-        <button
-          onClick={() => setShowUploader(true)}
-          className="btn btn-primary"
-        >
-          <FiUpload className="mr-2" />
-          Upload Loan Estimate
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowUploader(true)}
+            className="btn btn-secondary"
+          >
+            <FiUpload className="mr-2" />
+            Upload PDF
+          </button>
+          <Link to="/loans/new" className="btn btn-primary">
+            <FiEdit className="mr-2" />
+            Enter Manually
+          </Link>
+        </div>
       </div>
 
       {/* PDF Uploader Modal */}
@@ -118,13 +125,20 @@ export default function LoansPage() {
         <div className="card text-center py-12">
           <FiPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">No loans yet</h3>
-          <p className="text-gray-600 mb-6">Upload your first loan estimate to get started</p>
-          <button
-            onClick={() => setShowUploader(true)}
-            className="btn btn-primary"
-          >
-            Upload Loan Estimate
-          </button>
+          <p className="text-gray-600 mb-6">Add your first loan estimate</p>
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => setShowUploader(true)}
+              className="btn btn-secondary"
+            >
+              <FiUpload className="mr-2" />
+              Upload PDF
+            </button>
+            <Link to="/loans/new" className="btn btn-primary">
+              <FiEdit className="mr-2" />
+              Enter Manually
+            </Link>
+          </div>
         </div>
       )}
     </div>

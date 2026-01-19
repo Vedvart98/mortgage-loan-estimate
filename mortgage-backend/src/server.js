@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/database'); 
+const connectDB = require('./config/database');
 const app = express(); 
 
 // Connect to Database
@@ -24,7 +24,7 @@ app.use(helmet());
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, 
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
